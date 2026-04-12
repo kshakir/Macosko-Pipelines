@@ -45,7 +45,7 @@ end
 end
 
 # Read the FASTQs
-@everywhere function process_fastqs(prob, bead1_type, bead2_type, R1, R2)
+@everywhere function process_fastqs(prob, bead1_type, bead2_type, R1_filter, R2_filter, R1, R2)
     bead1_info = bead1_type_to_info(bead1_type)
     bead2_info = bead2_type_to_info(bead2_type)
     R1_len = bead1_info.R_len
@@ -70,11 +70,18 @@ end
         # Random dropout for downsampling
         prob < 1 && rand() > prob && continue
 
-        metadata["reads"] += 1
-
         # Load the sequences
         seq1 = FASTQ.sequence(record[1])
         seq2 = FASTQ.sequence(record[2])
+
+        if (!startswith(seq1, R1_filter))
+            continue
+        end
+        if (!startswith(seq2, R2_filter))
+            continue
+        end
+
+        metadata["reads"] += 1
 
         # Validate the sequence length
         skip = false
@@ -189,19 +196,21 @@ function read_fastqs(
     bead2_type::String,
     R1s::Vector{String},
     R2s::Vector{String},
+    R1_filter::String = "",
+    R2_filter::String = "",
 )::Tuple{DataFrame, Dict{String, Int64}}
 
     ################################################################################
 
-    println("\nReading FASTQs...") ; flush(stdout)
+    print_start("\nReading FASTQs...\n")
 
-    results = pmap(pair -> process_fastqs(prob, bead1_type, bead2_type, pair...), zip(R1s, R2s))
+    results = pmap(pair -> process_fastqs(prob, bead1_type, bead2_type, R1_filter, R2_filter, pair...), zip(R1s, R2s))
 
     df = vcat([r[1] for r in results]...)
     metadata = reduce((x, y) -> mergewith(+, x, y), [r[2] for r in results])
     results = nothing
 
-    println("...done") ; flush(stdout) ; GC.gc()
+    println_done("...done")
 
     return df, metadata
 end

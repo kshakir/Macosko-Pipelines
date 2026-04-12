@@ -86,6 +86,8 @@ println("Threads: $(Threads.nthreads())\n")
 
 ################################################################################
 
+include(joinpath(@__DIR__, "logging.jl"))
+
 include(joinpath(@__DIR__, "find-fastqs.jl"))
 
 const R1s, R2s = find_fastqs(fastq_path, regex, out_path)
@@ -111,6 +113,8 @@ rmprocs(workers())
 
 const bead1_info = bead1_type_to_info(bead1_type)
 const bead2_info = bead2_type_to_info(bead2_type)
+
+include(joinpath(@__DIR__, "data-frame.jl"))
 
 include(joinpath(@__DIR__, "count-reads.jl"))
 
@@ -150,6 +154,8 @@ const tab1, tab2, cutoffs = compute_whitelists(df, metadata, R1_barcodes, R2_bar
 
 ################################################################################
 
+include(joinpath(@__DIR__, "barcode-set.jl"))
+
 include(joinpath(@__DIR__, "match-whitelists.jl"))
 
 match_whitelists(df, metadata, tab1, tab2, cutoffs)
@@ -158,6 +164,8 @@ match_whitelists(df, metadata, tab1, tab2, cutoffs)
 
 include(joinpath(@__DIR__, "remove-chimeras.jl"))
 
+compute_chimeric1(df)
+compute_chimeric2(df)
 remove_chimeras(df, metadata)
 
 ################################################################################
